@@ -1,0 +1,14 @@
+services:
+    db:
+        image: mongo:latest
+        ports:
+            - "27017:27017"
+
+    api:
+        build:
+            dockerfile: ./Dockerfile
+        ports:
+            - "8000:8000"
+        env_file:
+            - path: ./dev.env
+              required: true # default
