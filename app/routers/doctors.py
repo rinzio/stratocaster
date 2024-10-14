@@ -1,0 +1,123 @@
+from http import HTTPStatus as HTTP
+
+from fastapi import APIRouter, Depends, HTTPException
+from typing import Any, List, Dict, Optional
+
+from internal.db.repository import Doctors
+from internal.db.models import DoctorModel, DoctorChangeset, DoctorPatientsChangeset
+# from app.dependencies import get_token_header
+
+
+router = APIRouter(
+    prefix="/doctors",
+    tags=["doctors"],
+    # dependencies=[Depends(get_token_header)],
+    responses={404: {"description": "Not found"}},
+)
+
+@router.post(
+    "/",
+    response_description="Add new doctor",
+    response_model=DoctorModel,
+    status_code=HTTP.CREATED,
+    response_model_by_alias=False,
+)
+async def post(doctor: DoctorModel):
+    return Doctors.create(doctor.model_dump(by_alias=True, exclude=["id"]))
+
+@router.get(
+    "/",
+    response_description="List all doctors",
+    response_model=List[DoctorModel],
+    status_code=HTTP.OK,
+    response_model_by_alias=False,
+)
+async def list(
+    id_: Optional[str] = None,
+    name: Optional[str] = None,
+    p_lastname: Optional[str] = None,
+    email: Optional[str] = None,
+    is_active: Optional[bool] = True
+):
+    """
+    List all of the doctors data in the database.
+
+    The response is unpaginated and limited to 1000 results.
+    """
+    query: Dict[str, Any] = {k: v for k, v in {
+        "id": id_,
+        "name": name,
+        "p_lastname": p_lastname,
+        "email": email,
+        "is_active": is_active,
+    }.items() if v is not None}
+    return Doctors.list(query)
+
+@router.get(
+    "/{id}",
+    response_description="Get a single doctor",
+    response_model=DoctorModel,
+    status_code=HTTP.OK,
+    response_model_by_alias=False,
+)
+async def get(id: str, is_active: bool = True):
+    """
+    Get the record for a specific doctor, looked up by `id`.
+    """
+    if (doctor := Doctors.get(id, is_active)) is None:
+        raise HTTPException(status_code=HTTP.NOT_FOUND, detail=f"Patient {id} not found")
+    return doctor
+
+
+@router.delete(
+    "/{id}",
+    response_description="Delete a single doctor",
+    response_model=DoctorModel,
+    status_code=HTTP.CREATED,
+    response_model_by_alias=False,
+)
+async def delete(id: str):
+    """
+    Delete the record for a specific doctor, looked up by `id`.
+    """
+    doctor = Doctors.delete(id)
+    if doctor is None:
+        raise HTTPException(status_code=HTTP.NOT_FOUND, detail=f"Patient {id} not found")
+    return doctor
+
+
+@router.put(
+    "/{id}",
+    response_description="Update an doctor",
+    response_model=DoctorModel,
+    status_code=HTTP.CREATED,
+    response_model_by_alias=False,
+)
+async def update(id: str, doctor: DoctorChangeset):
+    """
+    Update individual fields of an existing doctor record.
+
+    Only the provided fields will be updated.
+    Any missing or `null` fields will be ignored.
+    """
+    changeset = {
+        k: v for k, v in doctor.model_dump(by_alias=True).items() if v is not None
+    }
+    return Doctors.update(id, changeset)
+
+
+@router.patch(
+    "/{id}/add-patients",
+    response_description="Add patients list",
+    response_model=DoctorPatientsChangeset,
+    status_code=HTTP.CREATED,
+    response_model_by_alias=False,
+)
+async def patch(id: str, changeset: DoctorPatientsChangeset):
+    """
+    Add patient(s) to an existing doctor record.
+
+    Only the provided fields will be updated.
+    Any missing or `null` fields will be ignored.
+    """
+    return Doctors.add_patients(id, changeset.patients)
