@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
+from bson import ObjectId
 
 from .id_ import PyObjectId
 
@@ -13,11 +14,11 @@ class DoctorModel(BaseModel):
     # Required fields
     name: str
     prof_id: str  # TODO: Add validator
-    email: EmailStr
+    email: EmailStr # TODO: Unique constraint
     p_lastname: str
 
     # Relationships
-    patients: List[PyObjectId]
+    patients: List[PyObjectId] = []
 
     # Optional fields
     m_lastname: Optional[str] = None
@@ -47,4 +48,4 @@ class DoctorChangeset(BaseModel):
 
 
 class DoctorPatientsChangeset(BaseModel):
-    patients: List[str]
+    patients: List[PyObjectId]

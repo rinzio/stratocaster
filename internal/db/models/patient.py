@@ -12,7 +12,7 @@ class PatientModel(BaseModel):
 
     # Required fields
     name: str
-    email: EmailStr
+    email: EmailStr  # TODO: Unique constraint
     p_lastname: str
 
     # Optional fields

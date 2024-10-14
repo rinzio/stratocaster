@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 from pymongo.collection import Collection, ReturnDocument
 from bson import ObjectId
 
+from internal.db.models.id_ import PyObjectId
 from internal.db.models.patient import PatientModel
 
 from .repository import Repository
@@ -65,7 +66,7 @@ class Doctors(Repository):
         return cls.get(id)
 
     @classmethod
-    def add_patients(cls, _id: str, patients: List[str])  -> Optional[DoctorModel]:
+    def add_patients(cls, _id: str, patients: List[PyObjectId])  -> Optional[DoctorModel]:
         doctor = cls.get(_id)
         if doctor is None:
             raise RuntimeError(f"Doctor not found {_id}")
@@ -83,5 +84,16 @@ class Doctors(Repository):
         _id: str,
         queryset: Optional[Dict[str, Any]] = None,
         limit: int = 1000
-    ) -> List[DoctorModel]:
+    ) -> List[PatientModel]:
         doctor = cls.get(_id)
+        if doctor is None:
+            raise RuntimeError(f"Doctor not found {_id}")
+
+        if queryset is None:
+            queryset = {
+                "_id": {"$in": [ObjectId(patient) for patient in doctor.patients]}
+            }
+        else:
+            queryset["_id"] = {"$in": [ObjectId(patient) for patient in doctor.patients]}
+
+        return Patients.list(queryset)

@@ -3,6 +3,7 @@ from http import HTTPStatus as HTTP
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Any, List, Dict, Optional
 
+from internal.db.models.patient import PatientModel
 from internal.db.repository import Doctors
 from internal.db.models import DoctorModel, DoctorChangeset, DoctorPatientsChangeset
 # from app.dependencies import get_token_header
@@ -65,9 +66,37 @@ async def get(id: str, is_active: bool = True):
     Get the record for a specific doctor, looked up by `id`.
     """
     if (doctor := Doctors.get(id, is_active)) is None:
-        raise HTTPException(status_code=HTTP.NOT_FOUND, detail=f"Patient {id} not found")
+        raise HTTPException(status_code=HTTP.NOT_FOUND, detail=f"Doctor {id} not found")
     return doctor
 
+
+@router.get(
+    "/{id}/patients",
+    response_description="Get patients for a single doctor",
+    response_model=List[PatientModel],
+    status_code=HTTP.OK,
+    response_model_by_alias=False,
+)
+async def list_patients(
+    id: str,
+    name: Optional[str] = None,
+    p_lastname: Optional[str] = None,
+    email: Optional[str] = None,
+    is_active: Optional[bool] = True
+):
+    """
+    List all patients for a specific doctor data in the database.
+
+    The response is unpaginated and limited to 1000 results.
+    """
+    # TODO: Pagination and remove hardcoded 1000
+    query: Dict[str, Any] = {k: v for k, v in {
+        "name": name,
+        "p_lastname": p_lastname,
+        "email": email,
+        "is_active": is_active,
+    }.items() if v is not None}
+    return Doctors.get_patients(id, query)
 
 @router.delete(
     "/{id}",
@@ -107,7 +136,7 @@ async def update(id: str, doctor: DoctorChangeset):
 
 
 @router.patch(
-    "/{id}/add-patients",
+    "/{id}/patients",
     response_description="Add patients list",
     response_model=DoctorPatientsChangeset,
     status_code=HTTP.CREATED,
