@@ -1,6 +1,4 @@
-from http import HTTPStatus as status
-from fastapi import FastAPI, HTTPException
-
+from fastapi import FastAPI
 from app.routers import patients, doctors
 
 app = FastAPI()
