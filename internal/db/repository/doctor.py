@@ -97,3 +97,17 @@ class Doctors(Repository):
             queryset["_id"] = {"$in": [ObjectId(patient) for patient in doctor.patients]}
 
         return Patients.list(queryset)
+
+
+    @classmethod
+    def remove_patients(cls, _id: str, patients: List[PyObjectId])  -> Optional[DoctorModel]:
+        doctor = cls.get(_id)
+        if doctor is None:
+            raise RuntimeError(f"Doctor not found {_id}")
+
+        for patient_id in patients:
+            patient = Patients.get(patient_id)
+            if patient is not None and patient_id in doctor.patients:
+                doctor.patients.remove(patient_id)
+
+        return cls.update(_id, {"patients": doctor.patients})

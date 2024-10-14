@@ -96,7 +96,10 @@ async def list_patients(
         "email": email,
         "is_active": is_active,
     }.items() if v is not None}
-    return Doctors.get_patients(id, query)
+    try:
+        return Doctors.get_patients(id, query)
+    except RuntimeError as err:
+        raise HTTPException(HTTP.NOT_FOUND, detail=str(err))
 
 @router.delete(
     "/{id}",
@@ -150,3 +153,20 @@ async def patch(id: str, changeset: DoctorPatientsChangeset):
     Any missing or `null` fields will be ignored.
     """
     return Doctors.add_patients(id, changeset.patients)
+
+
+@router.delete(
+    "/{id}/patients",
+    response_description="Remove patients list",
+    response_model=DoctorPatientsChangeset,
+    status_code=HTTP.CREATED,
+    response_model_by_alias=False,
+)
+async def remove_patients(id: str, changeset: DoctorPatientsChangeset):
+    """
+    Remove patient(s) from an existing doctor record.
+
+    Only the provided fields will be updated.
+    Any missing or `null` fields will be ignored.
+    """
+    return Doctors.remove_patients(id, changeset.patients)
