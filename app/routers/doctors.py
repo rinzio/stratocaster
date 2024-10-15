@@ -82,7 +82,8 @@ async def list_patients(
     name: Optional[str] = None,
     p_lastname: Optional[str] = None,
     email: Optional[str] = None,
-    is_active: Optional[bool] = True
+    limit: int = 1000,
+    is_active: bool = True
 ):
     """
     List all patients for a specific doctor data in the database.
@@ -97,7 +98,7 @@ async def list_patients(
         "is_active": is_active,
     }.items() if v is not None}
     try:
-        return Doctors.get_patients(id, query)
+        return Doctors.get_patients(id, query, limit=limit)
     except RuntimeError as err:
         raise HTTPException(HTTP.NOT_FOUND, detail=str(err))
 
@@ -170,3 +171,16 @@ async def remove_patients(id: str, changeset: DoctorPatientsChangeset):
     Any missing or `null` fields will be ignored.
     """
     return Doctors.remove_patients(id, changeset.patients)
+
+
+@router.get(
+    "/{id}/patients/stats",
+    response_description="Get patient stats",
+    status_code=HTTP.OK,
+    response_model_by_alias=False,
+)
+async def get_patient_stats(id: str):
+    """
+    Get patient count for a doctor.
+    """
+    return Doctors.get_patient_stats(id)

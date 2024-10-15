@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional
 
-from pydantic import BaseModel, Field, EmailStr, ConfigDict
+from pydantic import BaseModel, Field, EmailStr
 
 from .id_ import PyObjectId
 
@@ -12,8 +12,10 @@ class PatientModel(BaseModel):
 
     # Required fields
     name: str
-    email: EmailStr  # TODO: Unique constraint
     p_lastname: str
+    genre: str # TODO: Use an enum
+    email: EmailStr  # TODO: Unique constraint
+
 
     # Optional fields
     m_lastname: Optional[str] = None
@@ -37,4 +39,5 @@ class PatientChangeset(BaseModel):
     email: Optional[EmailStr]
     p_lastname: Optional[str]
     m_lastname: Optional[str]
+    genre: Optional[str]
     birthdate: Optional[datetime]

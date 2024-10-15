@@ -38,12 +38,12 @@ class DoctorChangeset(BaseModel):
     A set of optional updates to be made to a document in the database.
     """
 
-    name: Optional[str]
-    email: Optional[EmailStr]
-    p_lastname: Optional[str]
-    m_lastname: Optional[str]
-    birthdate: Optional[datetime]
-    speciality: Optional[str]
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None 
+    p_lastname: Optional[str] = None
+    m_lastname: Optional[str] = None
+    birthdate: Optional[datetime] = None
+    speciality: Optional[str] = None
 
 
 

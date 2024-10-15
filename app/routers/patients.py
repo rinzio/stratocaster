@@ -87,7 +87,7 @@ async def delete(id: str):
     return patient
 
 
-@router.put(
+@router.patch(
     "/{id}",
     response_description="Update an patient",
     response_model=PatientModel,

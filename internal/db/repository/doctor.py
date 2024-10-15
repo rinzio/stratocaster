@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pymongo.collection import Collection, ReturnDocument
 from bson import ObjectId
@@ -28,19 +28,19 @@ class Doctors(Repository):
     @classmethod
     def create(cls, data: Dict) -> DoctorModel:
         neo = cls.__sui.insert_one(data)
-        return DoctorModel.parse_obj(cls.get(neo.inserted_id))
+        return DoctorModel.model_validate(cls.get(neo.inserted_id))
 
     @classmethod
     def get(cls, id: str, is_active: bool = True) -> Optional[DoctorModel]:
         if (data := cls.__sui.find_one({"_id": ObjectId(id), "is_active": is_active})):
-            return DoctorModel.parse_obj(data)
+            return DoctorModel.model_validate(data)
 
     @classmethod
     def list(cls, queryset: Optional[Dict[str, Any]] = None, limit: int = 1000) -> List[DoctorModel]:
         if not queryset:
             queryset = {"is_active": True}
         data = cls.__sui.find(queryset).to_list(limit)
-        return [DoctorModel.parse_obj(obj) for obj in data]
+        return [DoctorModel.model_validate(obj) for obj in data]
 
     @classmethod
     def delete(cls, id: str, soft: bool = True) -> Optional[DoctorModel]:
@@ -62,7 +62,7 @@ class Doctors(Repository):
                 return_document=ReturnDocument.AFTER,
             )
             if update_result is not None:
-                return DoctorModel.parse_obj(update_result)
+                return DoctorModel.model_validate(update_result)
         return cls.get(id)
 
     @classmethod
@@ -96,7 +96,7 @@ class Doctors(Repository):
         else:
             queryset["_id"] = {"$in": [ObjectId(patient) for patient in doctor.patients]}
 
-        return Patients.list(queryset)
+        return Patients.list(queryset, limit)
 
 
     @classmethod
@@ -111,3 +111,14 @@ class Doctors(Repository):
                 doctor.patients.remove(patient_id)
 
         return cls.update(_id, {"patients": doctor.patients})
+
+    @classmethod
+    def get_patient_stats(cls, _id: str) -> Dict[str, int]:
+        all_ = cls.get_patients(_id)
+
+
+        return {
+            "masc": len([p for p in all_ if p.genre == "M"]),
+            "fem": len([p for p in all_ if p.genre == "F"]),
+            "total": len(all_),
+        }
