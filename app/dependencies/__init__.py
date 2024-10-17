@@ -1,1 +1,1 @@
-from .dependencies import get_query_token, get_token_header
+from .dependencies import current_user, is_admin, is_doctor

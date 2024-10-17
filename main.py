@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import patients, doctors
+from app.routers import patients, doctors, auth, users
 
 
 app = FastAPI()
@@ -21,11 +21,11 @@ app.add_middleware(
 )
 
 
-
-
 namespaces = (
+    auth,
     doctors,
     patients,
+    users
 )
 
 for namespace in namespaces:

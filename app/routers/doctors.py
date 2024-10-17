@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import Any, List, Dict, Optional
 
 from internal.db.models.patient import PatientModel
-from internal.db.repository import Doctors
+from internal.db.repository import DoctorRepo
 from internal.db.models import DoctorModel, DoctorChangeset, DoctorPatientsChangeset
 # from app.dependencies import get_token_header
 
@@ -24,7 +24,7 @@ router = APIRouter(
     response_model_by_alias=False,
 )
 async def post(doctor: DoctorModel):
-    return Doctors.create(doctor.model_dump(by_alias=True, exclude=["id"]))
+    return DoctorRepo.create(doctor.model_dump(by_alias=True, exclude=["id"])) # type: ignore
 
 @router.get(
     "/",
@@ -52,7 +52,7 @@ async def list(
         "email": email,
         "is_active": is_active,
     }.items() if v is not None}
-    return Doctors.list(query)
+    return DoctorRepo.list(query)
 
 @router.get(
     "/{id}",
@@ -65,7 +65,7 @@ async def get(id: str, is_active: bool = True):
     """
     Get the record for a specific doctor, looked up by `id`.
     """
-    if (doctor := Doctors.get(id, is_active)) is None:
+    if (doctor := DoctorRepo.get(id=id, is_active=is_active)) is None:
         raise HTTPException(status_code=HTTP.NOT_FOUND, detail=f"Doctor {id} not found")
     return doctor
 
@@ -98,7 +98,7 @@ async def list_patients(
         "is_active": is_active,
     }.items() if v is not None}
     try:
-        return Doctors.get_patients(id, query, limit=limit)
+        return DoctorRepo.get_patients(id, query, limit=limit)
     except RuntimeError as err:
         raise HTTPException(HTTP.NOT_FOUND, detail=str(err))
 
@@ -113,7 +113,7 @@ async def delete(id: str):
     """
     Delete the record for a specific doctor, looked up by `id`.
     """
-    doctor = Doctors.delete(id)
+    doctor = DoctorRepo.delete(id)
     if doctor is None:
         raise HTTPException(status_code=HTTP.NOT_FOUND, detail=f"Patient {id} not found")
     return doctor
@@ -136,7 +136,7 @@ async def update(id: str, doctor: DoctorChangeset):
     changeset = {
         k: v for k, v in doctor.model_dump(by_alias=True).items() if v is not None
     }
-    return Doctors.update(id, changeset)
+    return DoctorRepo.update(id=id, changeset=changeset)
 
 
 @router.patch(
@@ -153,7 +153,7 @@ async def patch(id: str, changeset: DoctorPatientsChangeset):
     Only the provided fields will be updated.
     Any missing or `null` fields will be ignored.
     """
-    return Doctors.add_patients(id, changeset.patients)
+    return DoctorRepo.add_patients(changeset.patients, _id=id)
 
 
 @router.delete(
@@ -170,7 +170,7 @@ async def remove_patients(id: str, changeset: DoctorPatientsChangeset):
     Only the provided fields will be updated.
     Any missing or `null` fields will be ignored.
     """
-    return Doctors.remove_patients(id, changeset.patients)
+    return DoctorRepo.remove_patients(changeset.patients, _id=id)
 
 
 @router.get(
@@ -183,4 +183,4 @@ async def get_patient_stats(id: str):
     """
     Get patient count for a doctor.
     """
-    return Doctors.get_patient_stats(id)
+    return DoctorRepo.get_patient_stats(id)

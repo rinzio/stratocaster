@@ -1,8 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 
-from pydantic import BaseModel, Field, EmailStr, ConfigDict
-from bson import ObjectId
+from pydantic import BaseModel, Field, EmailStr
 
 from .id_ import PyObjectId
 

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import Any, List, Dict, Optional
 
 from internal.db.models import PatientModel, PatientChangeset
-from internal.db.repository import Patients
+from internal.db.repository import PatientRepo
 
 # from app.dependencies import get_token_header
 
@@ -24,7 +24,7 @@ router = APIRouter(
     response_model_by_alias=False,
 )
 async def post(patient: PatientModel):
-    return Patients.create(patient.model_dump(by_alias=True, exclude=["id"]))
+    return PatientRepo.create(patient.model_dump(by_alias=True, exclude=["id"]))
 
 @router.get(
     "/",
@@ -52,7 +52,7 @@ async def list(
         "email": email,
         "is_active": is_active,
     }.items() if v is not None}
-    return Patients.list(query)
+    return PatientRepo.list(query)
 
 @router.get(
     "/{id}",
@@ -65,7 +65,7 @@ async def get(id: str, is_active: bool = True):
     """
     Get the record for a specific patient, looked up by `id`.
     """
-    if (patient := Patients.get(id, is_active)) is None:
+    if (patient := PatientRepo.get(id, is_active)) is None:
         raise HTTPException(status_code=HTTP.NOT_FOUND, detail=f"Patient {id} not found")
     return patient
 
@@ -81,7 +81,7 @@ async def delete(id: str):
     """
     Delete the record for a specific patient, looked up by `id`.
     """
-    patient = Patients.delete(id)
+    patient = PatientRepo.delete(id)
     if patient is None:
         raise HTTPException(status_code=HTTP.NOT_FOUND, detail=f"Patient {id} not found")
     return patient
@@ -104,4 +104,4 @@ async def update(id: str, patient: PatientChangeset):
     changeset = {
         k: v for k, v in patient.model_dump(by_alias=True).items() if v is not None
     }
-    return Patients.update(id, changeset)
+    return PatientRepo.update(id, changeset)
