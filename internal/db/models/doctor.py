@@ -1,35 +1,21 @@
 from datetime import datetime
 from typing import Optional, List
 
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, EmailStr
+
+from internal.db.models.user import BaseUserModel
 
 from .id_ import PyObjectId
 
 
-class DoctorModel(BaseModel):
-    # ID
-    id: Optional[PyObjectId] = Field(alias="_id", default=None)
-
-    # Required fields
-    name: str
-    prof_id: str  # TODO: Add validator
-    email: EmailStr # TODO: Unique constraint
-    p_lastname: str
+class DoctorModel(BaseUserModel):
+    # Profesional
+    profesional_id: str
+    university: str  # TODO: Use an enum instead of string
 
     # Relationships
     patients: List[PyObjectId] = []
-
-    # Optional fields
-    m_lastname: Optional[str] = None
-    birthdate: Optional[datetime] = None
-    speciality: Optional[str] = "General"
-
-    # Timestamps
-    created_at: datetime = datetime.now()
-    updated_at: datetime = datetime.now()
-
-    # Flags
-    is_active: bool = True
+    speciality: Optional[str] = "General"  # TODO: Use an enum instead of string, use a list
 
 
 class DoctorChangeset(BaseModel):
@@ -43,6 +29,7 @@ class DoctorChangeset(BaseModel):
     m_lastname: Optional[str] = None
     birthdate: Optional[datetime] = None
     speciality: Optional[str] = None
+    university: Optional[str] = None
 
 
 

@@ -3,6 +3,15 @@ services:
         image: mongo:latest
         ports:
             - "27017:27017"
+        env_file:
+            - dev.env
+        volumes:
+            - ./setup/db/init.sh:/docker-entrypoint-initdb.d/init.sh
+        healthcheck:
+            test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+            interval: 10s
+            timeout: 10s
+            retries: 5
 
     api:
         build:

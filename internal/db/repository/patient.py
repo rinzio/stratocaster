@@ -13,14 +13,14 @@ from ..connection import Connection
 from ...env import MONGO_DB, MONGO_URI
 
 
-_conn = Connection(MONGO_URI, MONGO_DB).db
+_conn = Connection(MONGO_URI, MONGO_DB)
 if _conn is None:
     raise RuntimeError("Connection to DB could not be established")
 
 
 class PatientRepo(Repository):
 
-    __sui: Collection = _conn.db["patients"]
+    __sui: Collection = _conn.db["patients"] # type: ignore
 
     @classmethod
     def create(cls, data: Dict) -> PatientModel:

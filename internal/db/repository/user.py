@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import EmailStr
 from pymongo.collection import Collection, ReturnDocument
+from pymongo.errors import DuplicateKeyError
 from bson import ObjectId
 
 from internal.db.models.id_ import PyObjectId
@@ -14,19 +15,22 @@ from ..connection import Connection
 from ...env import MONGO_DB, MONGO_URI
 
 
-_conn = Connection(MONGO_URI, MONGO_DB).db
+_conn = Connection(MONGO_URI, MONGO_DB)
 if _conn is None:
     raise RuntimeError("Connection to DB could not be established")
 
 
 class UserRepo(Repository):
 
-    __sui: Collection = _conn.db["users"]
+    __sui: Collection = _conn.db["users"] # type: ignore
 
     @classmethod
     def create(cls, data: Dict) -> BaseUserModel:
-        neo = cls.__sui.insert_one(data)
-        return BaseUserModel.model_validate(cls.get(neo.inserted_id))
+        try:
+            neo = cls.__sui.insert_one(data)
+            return BaseUserModel.model_validate(cls.get(neo.inserted_id))
+        except DuplicateKeyError:
+            raise RuntimeError("Duplicated key, user not created")
 
     @classmethod
     def get(cls, id: str | None = None, email: EmailStr | None = None, is_active: bool = True) -> Optional[BaseUserModel]:
@@ -38,6 +42,10 @@ class UserRepo(Repository):
     
         if (data := cls.__sui.find_one(query)):
             return BaseUserModel.model_validate(data)
+        
+    @classmethod  # Name alias
+    def get_by(cls, id: str | None = None, email: EmailStr | None = None, *args, **kwargs):
+        return cls.get(id, email, *args, **kwargs)
 
     @classmethod
     def list(cls, queryset: Optional[Dict[str, Any]] = None, limit: int = 1000) -> List[BaseUserModel]:

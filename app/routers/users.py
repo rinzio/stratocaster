@@ -2,15 +2,12 @@ from http import HTTPStatus as HTTP
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from internal.db.models.user import Role
 from typing import Annotated, Any, List, Dict, Optional
 
 from internal.db.repository import UserRepo
 from internal.db.models import BaseUserModel
 from app.dependencies import is_admin
 
-### DEBUG PURPOSES DELETE IN PROD
-### Password must be hashed from frontend
 from internal.env import ENV
 from ..auth import AuthManager
 
@@ -18,7 +15,12 @@ from ..auth import AuthManager
 router = APIRouter(
     prefix="/users",
     tags=["users"],
-    responses={404: {"description": "Not found"}, 403: {"description": "Not authorized to use this resource"}},
+    responses={
+        HTTP.CREATED: {"description": "User created"},
+        HTTP.BAD_REQUEST: {"description": "Something is wrong with the payload"},
+        HTTP.FORBIDDEN: {"description": "Not authorized to use this resource"},
+        HTTP.NOT_FOUND: {"description": "Not found"},
+    },
 )
 
 @router.post(
@@ -29,9 +31,11 @@ router = APIRouter(
     response_model_by_alias=False,
 )
 async def post(user: BaseUserModel):
-    if ENV == "dev":
-        user.password = AuthManager.hash(user.password)
-    return UserRepo.create(user.model_dump(by_alias=True, exclude=["id"])) # type: ignore
+    user.password = AuthManager.hash(user.password)
+    try:
+        return UserRepo.create(user.model_dump(by_alias=True, exclude=["id"])) # type: ignore
+    except RuntimeError:
+        raise HTTPException(status_code=HTTP.BAD_REQUEST, detail=f"User email already exists")
 
 @router.get(
     "/",
